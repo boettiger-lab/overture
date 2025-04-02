@@ -20,5 +20,6 @@ Imports:
     glue,
     utils
 Suggests: 
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    mapgl
 Config/testthat/edition: 3
