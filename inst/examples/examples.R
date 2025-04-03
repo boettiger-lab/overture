@@ -1,10 +1,8 @@
-#library(overture)
 
-library(dplyr)
-library(duckdbfs)
-library(sf)
 devtools::load_all()
+options("overture-bucket" = "public-overturemaps")
 
+d <- division()
 
 
 
@@ -13,7 +11,8 @@ bench::bench_time({
 })
 
 bench::bench_time({
-  gdf <- get_subdivision(primary_name = "California")
+  gdf <- get_subdivision(primary_name = "San Fransisco")
+  map(gdf)
 })  
 
 map(gdf)
@@ -63,7 +62,6 @@ map(gdf, fill_outline_color = "black")
 
 mapgl::maplibre(bounds = g) |>
   mapgl::add_fill_layer(
-    id = "gdf_data",
     tooltip = "primary",
     source = g,
     fill_color = "blue",

@@ -4,20 +4,38 @@
 \alias{overture}
 \title{Access overture data}
 \usage{
-overture(theme = "divisions", type = "division_area")
+overture(
+  theme = "divisions",
+  type = "division_area",
+  release = getOption("overture-release", "2025-03-19.0"),
+  bucket = getOption("overture-bucket", "overturemaps-us-west-2/release")
+)
 }
 \arguments{
 \item{theme}{overture theme}
 
 \item{type}{data type (overture partition, not 'subtype')}
+
+\item{release}{overture release string,
+see \url{https://docs.overturemaps.org/release/latest/}.
+This can also be configured in options().}
+
+\item{bucket}{overture bucket path. Leave as default except to use local
+mirrors, etc.  Also configurable using options().}
 }
 \description{
-Access overture data
+Accesses overture data by theme and type.  This creates a streamable
+connection to the cloud-hosted data using \code{duckdbfs}. It is possible
+to use most \code{dplyr} commands to subset and manipulate this data,
+see \code{dbplyr}.  Note that most spatial (PostGIS) operations are also
+possible in this streaming mode, which avoids reading very large
+data files into R.  Then use \code{\link[duckdbfs:to_sf]{duckdbfs::to_sf()}} to read the resulting
+subset into R as a native \code{sf} object.
 }
 \examples{
 \dontshow{if (interactive()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-overture()
 
-# example code
+divisions <- overture("divisions", "division_area")
+divisions |> dplyr::filter(region == "US-CA")
 \dontshow{\}) # examplesIf}
 }

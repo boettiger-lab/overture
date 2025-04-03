@@ -1,52 +1,43 @@
 
-
-
-subtype = c(
-'country',
-'dependency',
-'region',
-'county',
-'localadmin',
-'locality',
-'macrohood',
-'neighborhood',
-'microhood')
-
-division <- function(geom_type = c("polygon", "point", "line")) {
-  geom_type <- match.arg(geom_type)
-  division_geom_type <- switch(geom_type, 
-                               polygon = "division_area",
-                               point = "division",
-                               line = "division_boundary",
-                               "division_area")
+#' get_subdivision
+#' 
+#' Searches the division theme for a matching primary name.  Returns all
+#' polygons (division_area) for which the matching primary name is listed
+#' as the parent_division_id.  For instance, `get_subdivision("United States")`
+#' returns a data frame containing the 50 states and 7 territories in the 
+#' sovereign US., while `get_subdivision("California")` returns the counties
+#' in California.
+#' 
+#' NOTE: This can be very slow without a very high-speed network connection.
+#' 
+#' @param primary_name the name listed as "primary" in Overture.
+#' @return an `sf` object whose rows are all the polygon (or multipolygon)
+#' features that are immediate children of the matching division.
+#' 
+#' @references https://docs.overturemaps.org/schema/reference/divisions/division/
+#' @examplesIf interactive()
+#' 
+#' gdf <- get_subdivision("United States")
+#' map(gdf)
+#' 
+#' gdf <- get_subdivision("California")
+#' map(gdf)
+#' 
+#' @export
+get_subdivision <- function(primary_name) {
   
-  overture("divisions", division_geom_type)
-}
-
-#' get_subdivision("United States")
-get_subdivision <- function(primary_name, country = NULL) {
-  
-  divisions <- division("polygon")
-  division_ids <- division("point")
-  
-  if(!is.null(country)) {
-    division_ids <- filter(division_ids, country == {country})
-    divisions <-filter(divisions, country == {country})
-  }
+  divisions <- overture("divisions", "division_area")
+  division_ids <- overture("divisions", "division")
   
   division_ids |>
-    mutate(primary = struct_extract(names,"primary")) |>
-    filter(primary == {primary_name}) |>
-    select(parent_division_id = id) |>
-    inner_join(division_ids, by = "parent_division_id") |> 
-    select(division_id = id) |>
-    inner_join(divisions, by = "division_id") |>
+    dplyr::mutate(primary = struct_extract(names,"primary")) |>
+    dplyr::filter(primary == {primary_name}) |>
+    dplyr::select(parent_division_id = id) |>
+    dplyr::inner_join(division_ids, by = "parent_division_id") |> 
+    dplyr::select(division_id = id) |>
+    dplyr::inner_join(divisions, by = "division_id") |>
     safe_gdf()
   
 }
 
-
-
-
-# US "States" are Regions, regions are encoded as US-CA
-# counties do not have a filter
+globalVariables(c("id", "primary", "struct_extract"))

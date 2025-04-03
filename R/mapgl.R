@@ -40,7 +40,7 @@ map <- function (gdf,
                  fill_color = "blue", 
                  fill_opacity = 0.1, ...) {
 
-  if (!require(mapgl, quietly = TRUE)) {
+  if (!requireNamespace("mapgl", quietly = TRUE)) {
     message("The mapgl package must be installed first.")
     return(invisible(NULL))
     
