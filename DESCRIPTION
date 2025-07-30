@@ -18,10 +18,12 @@ Imports:
     duckdbfs,
     dplyr,
     dbplyr,
+    digest,
     glue,
-    utils,
+    memoise,
+    rlang,
     sf,
-    rlang
+    utils
 Suggests: 
     testthat (>= 3.0.0),
     mapgl

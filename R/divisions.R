@@ -90,4 +90,19 @@ get_subdivision <- function(primary_name) {
   gdf
 }
 
-globalVariables(c("id", "primary", "struct_extract"))
+globalVariables(c("id", "primary", "struct_extract", "subtype"))
+
+dummy_fn <- function() {
+
+  # BECAUSE R CHECKS ARE SOMETIMES RIDICULUOUS
+
+  # digest is an optional import for memoise but is needed our use of memoise.
+  # dbplyr is an optional import for dbplyr but needed in our use of dplyr.
+
+  # We have to list these packages in DEPENDS to avoid errors.
+  # But cannot have a package in DEPENDS without an explicit call to it.
+
+  digest::digest("1")
+  dbplyr::as.sql("COPY")
+
+}
