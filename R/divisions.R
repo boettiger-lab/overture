@@ -24,20 +24,21 @@
 #' map(gdf)
 #' 
 #' @export
-get_subdivision <- function(primary_name) {
+get_subdivision <- function(primary_name, type = c("country", "region", "county")) {
   
   divisions <- overture("divisions", "division_area")
   division_ids <- overture("divisions", "division")
   
-  division_ids |>
+  gdf <- division_ids |>
     dplyr::mutate(primary = struct_extract(names,"primary")) |>
     dplyr::filter(primary == {primary_name}) |>
     dplyr::select(parent_division_id = id) |>
     dplyr::inner_join(division_ids, by = "parent_division_id") |> 
     dplyr::select(division_id = id) |>
     dplyr::inner_join(divisions, by = "division_id") |>
-    safe_gdf()
-  
+    dplyr::mutate(primary = struct_extract(names, "primary"))
+    
+  gdf
 }
 
 globalVariables(c("id", "primary", "struct_extract"))

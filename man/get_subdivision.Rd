@@ -4,7 +4,7 @@
 \alias{get_subdivision}
 \title{get_subdivision}
 \usage{
-get_subdivision(primary_name)
+get_subdivision(primary_name, type = c("country", "region", "county"))
 }
 \arguments{
 \item{primary_name}{the name listed as "primary" in Overture.}
