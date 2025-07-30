@@ -8,7 +8,7 @@ overture(
   theme = "divisions",
   type = "*",
   release = getOption("overture-release", "2025-07-23.0"),
-  bucket = getOption("overture-bucket", "overturemaps-us-west-2/release")
+  bucket = getOption("overture-bucket", "overturemaps-us-west-2")
 )
 }
 \arguments{

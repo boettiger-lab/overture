@@ -4,7 +4,7 @@
 \alias{get_division}
 \title{get_division}
 \usage{
-get_division(primary_name, type = NULL, as_sf = TRUE)
+get_division(primary_name, type = NULL, as_sf = TRUE, is_land = TRUE)
 }
 \arguments{
 \item{primary_name}{the primary name of the division, e.g. "United States",
@@ -15,6 +15,9 @@ or "California".}
 
 \item{as_sf}{Return an \code{sf} object?  default \code{TRUE}. Set to FALSE only to continue
 additional processing outside-of-RAM with duckdbfs spatial tools.}
+
+\item{is_land}{logical, default TRUE. Avoids returning maritime regions unexpectedly.
+Set to NULL to return all values.}
 }
 \value{
 An \code{sf} object or corresponding lazy_tbl of the matching data

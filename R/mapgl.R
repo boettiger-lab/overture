@@ -23,6 +23,11 @@ drop_nested_cols <- function(gdf) {
 }
 
 safe_gdf <- function(gdf) {
+
+  if (is.character(gdf)) {
+     return(gdf)
+  }
+
   if (inherits(gdf, "tbl_duckdbfs")) {
     gdf <- duckdbfs::to_sf(gdf, crs="epsg:4326")
   }
@@ -59,7 +64,7 @@ to_s3 <- function(data, path, id_col = "id") {
   paste0("https://",
          Sys.getenv("AWS_S3_ENDPOINT"),
          "/",
-         bucket)
+         path)
 }
 
 
@@ -76,9 +81,13 @@ map <- function (gdf,
   }
 
   gdf <- safe_gdf(gdf)
-  bounds <- as.vector(sf::st_bbox(sf::st_transform(gdf, 4326)))
 
-  mapgl::maplibre() |>
+  bounds <- NULL
+  if(inherits(gdf, "sf")) {
+    bounds <- as.vector(sf::st_bbox(sf::st_transform(gdf, 4326)))
+  }
+
+  m <- mapgl::maplibre() |>
     mapgl::add_source("gdf_source", gdf) |>
     mapgl::add_fill_layer(
       id = "gdf_layer",
@@ -87,6 +96,9 @@ map <- function (gdf,
       fill_color = fill_color,
       fill_opacity = fill_opacity,
       ...
-    ) |> mapgl::fit_bounds(bounds)
+    )
+  if(!is.null(bounds)) {
+    m <- m |> mapgl::fit_bounds(bounds)
+  }
   
 }

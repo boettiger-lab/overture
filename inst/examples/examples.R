@@ -1,12 +1,19 @@
 devtools::load_all()
 library(dplyr)
 
-duckdbfs::duckdb_secrets()
-options("overture-bucket" = "public-overturemaps")
+#duckdbfs::duckdb_secrets()
+#options("overture-bucket" = "public-overturemaps")
 
+## AWS S3
+duckdbfs::duckdb_secrets(key = "", secret = "",
+                         endpoint = "s3.amazonaws.com",
+                         bucket = "overturemaps-us-west-2")
+
+options("overture-bucket" = "overturemaps-us-west-2",
+        "overture-release" = "2025-07-23.0")
 
 ca <- get_division("California", type = "region")
-uk <- get_division("United Kingdom")
+us <- get_division("United States")
 
 # plot with sf
 library(sf)
@@ -15,17 +22,31 @@ plot(ca[1])
 # maplibre plotting helper
 map(ca)
 
+
 # a county
-yolo <- get_division("Yolo County")
+yolo <- get_division("Yolo County",  as_sf = FALSE)
 map(yolo)
 
-gdf <- get_subdivision(primary_name = "United States")
 
 # using urls
 path <- "public-data/cache/overture.geojson"
-url <- gdf |> to_s3(path)
+url <- yolo |> to_s3(path)
 map(url)
 
+# get all children of a given id
+usa <- get_division("United States")
+parent_id <- us |> pull(division_id) # must use division id, not id
+ 
+children <- 
+  overture("divisions", "division") |> 
+  filter(parent_division_id == !!parent_id) |>
+  pull(id)
+
+polys <- 
+  overture("divisions", "division_area") |> 
+  filter(division_id %in% children)
+
+map(polys)
 
 # raw direct access
 # Configure to s3 to ignore any exsiting env vars.

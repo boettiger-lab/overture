@@ -35,15 +35,10 @@ pak::pak("boettiger-lab/overture")
 ```{r include=FALSE}
 # Cirrus NVME access, internal use
 duckdbfs::duckdb_secrets()
-options("overture-bucket" = "public-overturemaps")
+options("overture-bucket" = "public-overturemaps",
+        "overture-release" = "2025-03-19.0")
 
 
-
-
-# Configure to s3
-duckdbfs::duckdb_secrets(key = "", secret = "",
-                         endpoint = "s3.amazonaws.com",
-                         bucket = "overturemaps-us-west-2")
 
 ```
 
@@ -75,7 +70,13 @@ map(usa)
 The `overture()` function provides access to all of overture through lazy dplyr connections.
 
 ```{r include=FALSE}
-options("overture-bucket" = "overturemaps-us-west-2/release")
+# Configure to s3
+duckdbfs::duckdb_secrets(key = "", secret = "",
+                         endpoint = "s3.amazonaws.com",
+                         bucket = "overturemaps-us-west-2")
+
+options("overture-bucket" = "overturemaps-us-west-2",
+        "overture-release" = "2025-07-23.0")
 ```
 
 Here are just a few of the other endpoints:

@@ -5,8 +5,13 @@ cache <- function() {
   memoise::cache_filesystem(overture_cache())
 }
 
+
+
 #' @importFrom rlang !!
-get_division_ <- function(primary_name, type = NULL, as_sf = TRUE) {
+get_division_ <- function(primary_name,
+                          type = NULL,
+                          as_sf = TRUE,
+                          is_land = TRUE) {
   gdf <- overture("divisions", "division_area")
 
   if (!is.null(type)) {
@@ -14,8 +19,15 @@ get_division_ <- function(primary_name, type = NULL, as_sf = TRUE) {
   }
 
   gdf <- gdf |>
-    dplyr::filter(struct_extract(names, "primary") == !!primary_name)
+    dplyr::mutate(primary = struct_extract(names, "primary")) |>
+    dplyr::filter(primary == !!primary_name)
+
+  #  dplyr::filter(struct_extract(names, "primary") == !!primary_name)
   
+  if(!is.null(is_land)) {
+    gdf <- gdf |> filter(is_land == !!is_land)
+  }
+
   if (as_sf) {
     gdf <- safe_gdf(gdf)
   }
@@ -36,6 +48,8 @@ get_division_ <- function(primary_name, type = NULL, as_sf = TRUE) {
 #'  "neighborhood" etc. By default will search all types.
 #' @param as_sf Return an `sf` object?  default `TRUE`. Set to FALSE only to continue
 #' additional processing outside-of-RAM with duckdbfs spatial tools.
+#' @param is_land logical, default TRUE. Avoids returning maritime regions unexpectedly.
+#' Set to NULL to return all values.
 #' @return An `sf` object or corresponding lazy_tbl of the matching data
 #' @export
 #' 

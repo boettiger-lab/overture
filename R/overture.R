@@ -35,13 +35,13 @@ overture <- function(theme="divisions",
                      release = getOption("overture-release",
                                          "2025-07-23.0"),
                      bucket = getOption("overture-bucket",
-                                        "overturemaps-us-west-2/release")
+                                        "overturemaps-us-west-2")
                      ) {
   
   duckdbfs::duckdb_secrets()
   
   duckdbfs::load_spatial()
-  path <- glue::glue("s3://{bucket}/{release}/theme={theme}/type={type}/")
+  path <- glue::glue("s3://{bucket}/release/{release}/theme={theme}/type={type}/")
   d <- duckdbfs::open_dataset(path)
   # dplyr::mutate(d, geometry = ST_GeomFromWKB(geometry))
   classes <- class(d)
