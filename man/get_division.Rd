@@ -16,6 +16,9 @@ or "California".}
 \item{as_sf}{Return an \code{sf} object?  default \code{TRUE}. Set to FALSE only to continue
 additional processing outside-of-RAM with duckdbfs spatial tools.}
 }
+\value{
+An \code{sf} object or corresponding lazy_tbl of the matching data
+}
 \description{
 Return a polygon for the desired division (e.g. country, region, county, etc).
 By default will search for a direct match to the Overture primary name across

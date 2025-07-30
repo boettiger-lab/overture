@@ -13,7 +13,7 @@ get_division_ <- function(primary_name, type = NULL, as_sf = TRUE) {
     gdf <- gdf |> dplyr::filter(subtype == !!type)
   }
 
-  gdf <- gdf |> 
+  gdf <- gdf |>
     dplyr::filter(struct_extract(names, "primary") == !!primary_name)
   
   if (as_sf) {
@@ -36,6 +36,8 @@ get_division_ <- function(primary_name, type = NULL, as_sf = TRUE) {
 #'  "neighborhood" etc. By default will search all types.
 #' @param as_sf Return an `sf` object?  default `TRUE`. Set to FALSE only to continue
 #' additional processing outside-of-RAM with duckdbfs spatial tools.
+#' @return An `sf` object or corresponding lazy_tbl of the matching data
+#' @export
 #' 
 #' @examplesIf  interactive()
 #' 
