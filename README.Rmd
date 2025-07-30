@@ -33,15 +33,26 @@ pak::pak("boettiger-lab/overture")
 ## Getting Started
 
 ```{r include=FALSE}
-# Cirrus NVME access
+# Cirrus NVME access, internal use
+duckdbfs::duckdb_secrets()
 options("overture-bucket" = "public-overturemaps")
 ```
 
-```{r example}
+```{r}
 library(overture)
+```
 
-df <- overture("divisions", "division_area")
-df
+
+```{r example}
+gdf <- get_subdivision("United States")
+map(gdf)
+```
+
+
+```{r}
+gdf <- get_subdivision("California")
+map(gdf)
+
 ```
 
 

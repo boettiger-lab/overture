@@ -24,7 +24,7 @@
 #' map(gdf)
 #' 
 #' @export
-get_subdivision <- function(primary_name, type = c("country", "region", "county")) {
+get_subdivision <- function(primary_name) {
   
   divisions <- overture("divisions", "division_area")
   division_ids <- overture("divisions", "division")
@@ -33,9 +33,9 @@ get_subdivision <- function(primary_name, type = c("country", "region", "county"
     dplyr::mutate(primary = struct_extract(names,"primary")) |>
     dplyr::filter(primary == {primary_name}) |>
     dplyr::select(parent_division_id = id) |>
-    dplyr::inner_join(division_ids, by = "parent_division_id") |> 
+    dplyr::inner_join(division_ids, by = "parent_division_id") |> # Filter ids to children of the matched primary_name
     dplyr::select(division_id = id) |>
-    dplyr::inner_join(divisions, by = "division_id") |>
+    dplyr::inner_join(divisions, by = "division_id") |> # Filter to geometries of the matched polygons
     dplyr::mutate(primary = struct_extract(names, "primary"))
     
   gdf

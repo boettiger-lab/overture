@@ -38,28 +38,28 @@ safe_gdf <- function(gdf) {
 #' 
 #' Assumes AWS authentication / environmental variables are set.  
 #' @param data gdf or duckdbfs table connection (e.g. from `overture()`)
-#' @param hostpath bucket name and path to geojson
+#' @param path bucket name and path to geojson
+#' @param id_col the id column for [duckdb::to_geojson()]
 #' @return url to the geojson, e.g. for use with maplibre / mapgl
 #' 
 #' @export
-to_s3 <- function(data, hostpath, id_col) {
+to_s3 <- function(data, path, id_col = "id") {
 
-
-  if (inherits(data, "tbl_lazy")) {
-    dest <- paste0("s3://", hostpath)
-
+  # duckdbfs tables can be streamed to geojosn
+  if (inherits(data, "tbl_duckdbfs")) {
+    dest <- paste0("s3://", path)
     data |> 
       duckdbfs::as_dataset() |>
       duckdbfs::to_geojson(dest, id_col = id_col)
   } else if (inherits(data, "sf")) {
-    dest <- paste0("/vsis3/", hostpath)
+    dest <- paste0("/vsis3/", path)
     sf::st_write(data, dest)
   }
 
   paste0("https://",
          Sys.getenv("AWS_S3_ENDPOINT"),
          "/",
-         hostpath)
+         bucket)
 }
 
 
@@ -75,9 +75,8 @@ map <- function (gdf,
     return(invisible(NULL))
   }
 
-
-
-
+  gdf <- safe_gdf(gdf)
+  bounds <- as.vector(sf::st_bbox(sf::st_transform(gdf, 4326)))
 
   mapgl::maplibre() |>
     mapgl::add_source("gdf_source", gdf) |>
@@ -88,6 +87,6 @@ map <- function (gdf,
       fill_color = fill_color,
       fill_opacity = fill_opacity,
       ...
-    ) # |> mapgl::fit_bounds(bounds)
+    ) |> mapgl::fit_bounds(bounds)
   
 }
