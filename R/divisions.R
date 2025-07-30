@@ -1,4 +1,53 @@
 
+overture_cache <- function() tools::R_user_dir("overture", "cache")
+
+cache <- function() {
+  memoise::cache_filesystem(overture_cache())
+}
+
+#' @importFrom rlang !!
+get_division_ <- function(primary_name, type = NULL, as_sf = TRUE) {
+  gdf <- overture("divisions", "division_area")
+
+  if (!is.null(type)) {
+    gdf <- gdf |> dplyr::filter(subtype == !!type)
+  }
+
+  gdf <- gdf |> 
+    dplyr::filter(struct_extract(names, "primary") == !!primary_name)
+  
+  if (as_sf) {
+    gdf <- safe_gdf(gdf)
+  }
+
+  gdf
+}
+
+
+#' get_division
+#' 
+#' Return a polygon for the desired division (e.g. country, region, county, etc).
+#' By default will search for a direct match to the Overture primary name across
+#' all Overture subtypes.  Specify the type for faster search and/or to resolve
+#' ambiguities.
+#' @param primary_name the primary name of the division, e.g. "United States",
+#'    or "California".
+#' @param type the Overture subtype, e.g. "country", "region", "county", "locality",
+#'  "neighborhood" etc. By default will search all types.
+#' @param as_sf Return an `sf` object?  default `TRUE`. Set to FALSE only to continue
+#' additional processing outside-of-RAM with duckdbfs spatial tools.
+#' 
+#' @examplesIf  interactive()
+#' 
+#' uk <- get_division("United Kingdom")
+#' ca <- get_division("California", type = "region")
+#' library(sf)
+#' plot(uk[1])
+get_division <- memoise::memoise(get_division_, cache = cache())
+
+
+
+
 #' get_subdivision
 #' 
 #' Searches the division theme for a matching primary name.  Returns all

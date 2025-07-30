@@ -4,14 +4,14 @@
 \alias{to_s3}
 \title{to_s3}
 \usage{
-to_s3(data, hostpath, id_col)
+to_s3(data, path, id_col = "id")
 }
 \arguments{
 \item{data}{gdf or duckdbfs table connection (e.g. from \code{overture()})}
 
-\item{hostpath}{bucket name and path to geojson}
+\item{path}{bucket name and path to geojson}
 
-\item{id_col}{the id column for \code{\link[duckdb:to_geojson]{duckdb::to_geojson()}}}
+\item{id_col}{the id column for \code{\link[duckdbfs:to_geojson]{duckdbfs::to_geojson()}}}
 }
 \value{
 url to the geojson, e.g. for use with maplibre / mapgl

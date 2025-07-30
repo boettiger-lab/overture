@@ -31,9 +31,9 @@ bucket <- function() {
 #' 
 #' @export
 overture <- function(theme="divisions", 
-                     type = "division_area",
+                     type = "*",
                      release = getOption("overture-release",
-                                         "2025-03-19.0"),
+                                         "2025-07-23.0"),
                      bucket = getOption("overture-bucket",
                                         "overturemaps-us-west-2/release")
                      ) {

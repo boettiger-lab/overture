@@ -39,7 +39,7 @@ safe_gdf <- function(gdf) {
 #' Assumes AWS authentication / environmental variables are set.  
 #' @param data gdf or duckdbfs table connection (e.g. from `overture()`)
 #' @param path bucket name and path to geojson
-#' @param id_col the id column for [duckdb::to_geojson()]
+#' @param id_col the id column for [duckdbfs::to_geojson()]
 #' @return url to the geojson, e.g. for use with maplibre / mapgl
 #' 
 #' @export

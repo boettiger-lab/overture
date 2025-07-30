@@ -4,12 +4,10 @@
 \alias{get_subdivision}
 \title{get_subdivision}
 \usage{
-get_subdivision(primary_name, type = c("country", "region", "county"))
+get_subdivision(primary_name)
 }
 \arguments{
 \item{primary_name}{the name listed as "primary" in Overture.}
-
-\item{type}{type of division: country, region, county}
 }
 \value{
 an \code{sf} object whose rows are all the polygon (or multipolygon)
