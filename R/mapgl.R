@@ -59,6 +59,8 @@ to_s3 <- function(data, path, id_col = "id") {
   } else if (inherits(data, "sf")) {
     dest <- paste0("/vsis3/", path)
     sf::st_write(data, dest)
+  } else {
+    stop("input not recognized")
   }
 
   paste0("https://",
