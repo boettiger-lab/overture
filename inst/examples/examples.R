@@ -33,6 +33,8 @@ path <- "public-data/cache/overture.geojson"
 url <- yolo |> to_s3(path)
 map(url)
 
+## Using filters instead of joins...
+
 # get all children of a given id
 usa <- get_division("United States")
 parent_id <- us |> pull(division_id) # must use division id, not id
