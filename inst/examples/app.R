@@ -1,14 +1,18 @@
+## recursively view parent
+
 library(shiny)
 library(bslib)
 library(mapgl)
 library(sf)
 library(dplyr)
 library(duckdbfs)
-#library(overture)
+library(rlang)
+library(overture)
 
 devtools::load_all()
-options("overture-bucket" = "public-overturemaps")
-
+options("overture-bucket" = "public-overturemaps",
+        "overture-release" = "2025-07-23.0")
+duckdbfs::duckdb_secrets()
 
 ui <- page_sidebar(
   title = "mapgl with Shiny",
@@ -24,45 +28,57 @@ ui <- page_sidebar(
 
 server <- function(input, output, session) {
 
+  gdf <- get_division("United States")
+  bounds <- as.vector(sf::st_bbox(gdf))
+
   output$map <- renderMaplibre({
-    hostpath = "public-data/cache/overture.geojson"
-    url <- paste0("https://", Sys.getenv("AWS_S3_ENDPOINT"), "/", hostpath)
-
-    get_subdivision(primary_name = "United States") |>
-      duckdbfs::to_geojson(paste0("s3://", hostpath), id_col = "primary")
-
-    print(url)
-
-    maplibre(style = carto_style("positron")) |>
-      add_fill_layer(id = "gdf_layer",
-                     source = url,
-                     fill_color = "blue",
-                     fill_opacity = 0.5)
+    map(gdf)
   })
 
-  output$clicked_feature <- renderText({
-    req(input$map_feature_click)
-    input$map_feature_click
-  })
-
+  # React to text input location
   observeEvent(input$feature, {
-    hostpath = "public-data/cache/overture1.geojson"
-    url <- paste0("https://", Sys.getenv("AWS_S3_ENDPOINT"), "/", hostpath)
-    get_subdivision(input$feature) |>  
-      to_geojson(paste0("s3://", hostpath), id_col = "primary")
+    new_gdf <- get_division(input$feature)
+    bounds <- as.vector(sf::st_bbox(new_gdf))
 
     maplibre_proxy("map") |>
-      set_source("gdf_layer", url)
-  })
+      set_source(layer_id = "gdf_layer",
+                source = new_gdf) |>
+                fit_bounds(bounds, animate = TRUE)
+  }) |> 
+  debounce(millis = 600) # give time to type
 
-
+  # React to clicked feature, showing children of the feature
   observeEvent(input$map_feature_click, {
-    name = input$map_feature_click$properties$primary
+    parent_id <- input$map_feature_click$properties$division_id
+    print(parent_id)
 
-    hostpath = "public-data/cache/overture2.geojson"
-    url <- paste0("https://", Sys.getenv("AWS_S3_ENDPOINT"), "/", hostpath)
-    gdf <- get_subdivision(name) |>
-      to_geojson(paste0("s3://", hostpath), id_col = "primary")
+    division_ids <- overture("divisions", "division")
+    division_areas <- overture("divisions", "division_area")
+
+    # Fully local
+    division_ids <- duckdbfs::open_dataset("/home/jovyan/data/overturemaps/release/2025-07-23.0/theme=divisions/type=division")
+    division_areas <- duckdbfs::open_dataset("/home/jovyan/data/overturemaps/release/2025-07-23.0/theme=divisions/type=division_area")
+
+    children <- 
+      division_ids |> 
+      filter(parent_division_id == !!parent_id) |>
+      pull(id)
+
+    gdf <- 
+      division_areas |> 
+      filter(division_id %in% children) |>
+      filter(is_land)
+
+#    gdf <- division_ids |> 
+#      filter(parent_division_id == !!parent_id) |>
+#      select(division_id = id) |>
+#      inner_join(division_areas, by ="division_id") |> 
+#      filter(is_land)
+
+    path <- glue::glue("public-data/cache/{parent_id}.geojson")
+    ## FIXME currently duckdbfs::to_geojson includes only id, not all attributes
+    url <- gdf |> to_s3(path, id_col = "division_id")
+    print(url)
 
     maplibre_proxy("map") |>
       set_source("gdf_layer", url)

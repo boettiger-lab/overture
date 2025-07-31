@@ -50,8 +50,8 @@ safe_gdf <- function(gdf) {
 #' @export
 to_s3 <- function(data, path, id_col = "id") {
 
-  # duckdbfs tables can be streamed to geojosn
-  if (inherits(data, "tbl_duckdbfs")) {
+  # duckdb tables can be streamed to geojosn
+  if (inherits(data, "tbl_duckdb_connection")) {
     dest <- paste0("s3://", path)
     data |> 
       duckdbfs::as_dataset() |>

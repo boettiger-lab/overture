@@ -8,7 +8,6 @@ library(dplyr)
 duckdbfs::duckdb_secrets(key = "", secret = "",
                          endpoint = "s3.amazonaws.com",
                          bucket = "overturemaps-us-west-2")
-
 options("overture-bucket" = "overturemaps-us-west-2",
         "overture-release" = "2025-07-23.0")
 
@@ -36,7 +35,16 @@ map(url)
 ## Using filters instead of joins...
 
 # get all children of a given id
-usa <- get_division("United States")
+
+
+options("overture-bucket" = "public-overturemaps",
+        "overture-release" = "2025-07-23.0")
+
+
+duckdbfs::duckdb_secrets()
+
+bench::bench_time({
+usa <- get_division_("United States")
 parent_id <- us |> pull(division_id) # must use division id, not id
  
 children <- 
@@ -46,7 +54,20 @@ children <-
 
 polys <- 
   overture("divisions", "division_area") |> 
-  filter(division_id %in% children)
+  filter(division_id %in% children) |>
+  safe_gdf()
+
+})
+
+bench::bench_time({
+children <- 
+  overture("divisions", "division") |> 
+  filter(parent_division_id == !!parent_id) |>
+  select(division_id = id) |>
+  inner_join(overture("divisions", "division_area")) |> 
+  safe_gdf()
+})
+bench::bench_time(gdf <- safe_gdf(polys))
 
 map(polys)
 
