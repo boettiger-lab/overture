@@ -4,7 +4,14 @@
 \alias{get_division}
 \title{get_division}
 \usage{
-get_division(primary_name, type = NULL, as_sf = TRUE, is_land = TRUE)
+get_division(
+  primary_name,
+  type = NULL,
+  as_sf = TRUE,
+  is_land = TRUE,
+  country = NULL,
+  region = NULL
+)
 }
 \arguments{
 \item{primary_name}{the primary name of the division, e.g. "United States",
@@ -18,15 +25,24 @@ additional processing outside-of-RAM with duckdbfs spatial tools.}
 
 \item{is_land}{logical, default TRUE. Avoids returning maritime regions unexpectedly.
 Set to NULL to return all values.}
+
+\item{country}{An optional 2-letter country code, can be used to filter results to avoid ambiguities.}
+
+\item{region}{a region code, e.g. US-CA (California).}
 }
 \value{
 An \code{sf} object or corresponding lazy_tbl of the matching data
 }
 \description{
-Return a polygon for the desired division (e.g. country, region, county, etc).
+Return a polygon for the desired division
+(e.g. country, region, county, etc).
 By default will search for a direct match to the Overture primary name across
 all Overture subtypes.  Specify the type for faster search and/or to resolve
 ambiguities.
+}
+\details{
+In the case of multiple matches, get_division() will only return the largest
+match by area.  If other matches are required, specify
 }
 \examples{
 \dontshow{if ( interactive()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}

@@ -3,6 +3,7 @@
 S3method(print,tbl_duckdbfs)
 export(get_division)
 export(get_subdivision)
+export(map)
 export(overture)
 export(to_s3)
 importFrom(rlang,"!!")
