@@ -14,6 +14,14 @@ options("overture-bucket" = "public-overturemaps",
         "overture-release" = "2025-07-23.0")
 duckdbfs::duckdb_secrets()
 
+division_ids <- overture("divisions", "division")
+division_areas <- overture("divisions", "division_area")
+
+# Fully local
+#division_ids <- duckdbfs::open_dataset("/home/jovyan/data/overturemaps/release/2025-07-23.0/theme=divisions/type=division")
+#division_areas <- duckdbfs::open_dataset("/home/jovyan/data/overturemaps/release/2025-07-23.0/theme=divisions/type=division_area")
+
+
 ui <- page_sidebar(
   title = "mapgl with Shiny",
   sidebar = sidebar(
@@ -52,13 +60,6 @@ server <- function(input, output, session) {
     parent_id <- input$map_feature_click$properties$division_id
     print(parent_id)
 
-    division_ids <- overture("divisions", "division")
-    division_areas <- overture("divisions", "division_area")
-
-    # Fully local
-    division_ids <- duckdbfs::open_dataset("/home/jovyan/data/overturemaps/release/2025-07-23.0/theme=divisions/type=division")
-    division_areas <- duckdbfs::open_dataset("/home/jovyan/data/overturemaps/release/2025-07-23.0/theme=divisions/type=division_area")
-
     children <- 
       division_ids |> 
       filter(parent_division_id == !!parent_id) |>
@@ -68,12 +69,6 @@ server <- function(input, output, session) {
       division_areas |> 
       filter(division_id %in% children) |>
       filter(is_land)
-
-#    gdf <- division_ids |> 
-#      filter(parent_division_id == !!parent_id) |>
-#      select(division_id = id) |>
-#      inner_join(division_areas, by ="division_id") |> 
-#      filter(is_land)
 
     path <- glue::glue("public-data/cache/{parent_id}.geojson")
     ## FIXME currently duckdbfs::to_geojson includes only id, not all attributes
