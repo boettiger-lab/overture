@@ -3,7 +3,9 @@ overture_cache <- function() {
 }
 
 cache <- function() {
-  memoise::cache_filesystem(overture_cache())
+  dir <- overture_cache()
+  dir.create(dir, FALSE, TRUE) # ensure dir exists
+  memoise::cache_filesystem(dir)
 }
 
 
