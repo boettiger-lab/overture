@@ -21,7 +21,7 @@ get_division_ <- function(
   gdf <- overture("divisions", "division_area")
 
   if (!is.null(type)) {
-    gdf <- gdf |> dplyr::filter(subtype == !!type)
+    gdf <- gdf |> dplyr::filter(subtype %in% !!type)
   }
   if (!is.null(is_land)) {
     gdf <- gdf |> dplyr::filter(is_land == !!is_land)

@@ -8,6 +8,7 @@ library(colourpicker)
 library(overture)
 
 pmtiles <- "https://minio.carlboettiger.info/public-social-vulnerability/2022/SVI2022_US_county.pmtiles"
+tract <- "https://minio.carlboettiger.info/public-social-vulnerability/2022/SVI2022_US_tract.pmtiles"
 
 ## Make anonymous AWS S3 default endpoint for "overturemaps-us-west-2"
 duckdbfs::duckdb_secrets(
@@ -22,14 +23,6 @@ ui <- page_sidebar(
   title = "Interactive feature selection",
   # Add custom CSS for smaller font size
 
-  includeMarkdown(
-    "A demonstration of different mechanisms to interactively select features in mapgl + shiny.
-
-  - Draw a polygon on a map
-  - extract a polygon from the built-in geocode
-  "
-  ),
-
   sidebar = sidebar(
     actionButton("get_features", "Get drawing"),
     actionButton("visible_features", "Get current features"),
@@ -39,20 +32,10 @@ ui <- page_sidebar(
       input_switch("show_states", "States", value = FALSE),
       input_switch("show_counties", "Counties", value = FALSE),
     ),
-    textInput("feature", "Location", "United States"),
-    tags$div(
-      style = "font-size: 0.7em;",
-      checkboxGroupInput(
-        "location_type",
-        NULL,
-        c(
-          "Country" = "country",
-          "Region" = "region",
-          "County" = "county",
-          "Locality" = "locality"
-        ),
-        selected = c("country", "region")
-      )
+
+    card(
+      textInput("feature", "Location", "United States"),
+      actionButton("overture_layer", "go"),
     ),
     hr(),
 
@@ -71,7 +54,19 @@ ui <- page_sidebar(
   card(
     full_screen = TRUE,
     maplibreOutput("map")
-  )
+  ),
+  includeMarkdown(
+    "A demonstration of different mechanisms to interactively select features in mapgl + shiny.
+
+  - Toggle off and on possible selection layers (States, counties)
+  - Use a PMTiles layer to render many polygons quickly (counties)
+  - Draw a polygon on a map
+  - extract points from the built-in geocode
+  - query Overture Maps for a polygon
+  - Select a feature with mouse from PMTiles or sf layer
+  - Grab current viewport features ('local' sources only?)
+  "
+  ),
 )
 
 
@@ -151,20 +146,40 @@ server <- function(input, output, session) {
     # use x$layer and x$properties$FIPS ( ID column) to extract geom and plot
   })
 
-  # Ex: Get a Overture by name from Overture
-  observeEvent(input$feature, {
-    if (FALSE) {
-      # print(input$feature)
+  # Ex: Get a feature by name from Overture
+  # really we might want to filter to country, specify type, and fuzzy-match on names
+  observeEvent(input$overture_layer, {
+    print(paste(
+      "Searching Overture for area:",
+      input$feature,
+      ", type:",
+      input$location_type
+    ))
 
-      new_gdf <- overture::get_division(input$feature)
+    #
+    new_gdf <- overture::get_division(input$feature)
+
+    print(new_gdf)
+    if (nrow(new_gdf) < 1) {
+      print(paste("No exact match for primary name:", input$feature))
+      maplibre_proxy("map")
+    } else {
       bounds <- as.vector(sf::st_bbox(new_gdf))
 
+      # remove any existing overture layer first
+      maplibre_proxy("map") |> clear_layer("overture")
+
       maplibre_proxy("map") |>
-        set_source(layer_id = "counties_layer", source = new_gdf) |>
+        add_fill_layer(
+          id = "overture",
+          source = new_gdf,
+          fill_opacity = 0.3,
+          fill_color = "pink"
+        ) |>
         fit_bounds(bounds, animate = TRUE)
     }
   }) |>
-    debounce(millis = 600)
+    debounce(millis = 600) # more time to type?
 
   # Ex Show a feature user has drawn on the map
   observeEvent(input$get_features, {
@@ -174,9 +189,8 @@ server <- function(input, output, session) {
     print(drawn_features)
   })
 
-  # Ex: Get POINT data from geocoder?
-  # can react by operating on hex or parent polygon
-
+  # Ex: Get POINT data from geocoder (OSM)
+  # could then react by operating on hex or some containing polygon
   observeEvent(input$map_geocoder$result, {
     temp <- tempfile(fileext = ".geojson")
     output <- list(
@@ -192,7 +206,8 @@ server <- function(input, output, session) {
     print(geo)
   })
 
-  # Get current features from a specified layer # GDF layer only (not proxy URL / PMTiles layers)
+  # Get current features from a specified layer
+  # GDF layer only (not proxy URL / PMTiles layers)
   observeEvent(input$visible_features, {
     print("Extracting current features...")
     proxy <- maplibre_proxy("map")
