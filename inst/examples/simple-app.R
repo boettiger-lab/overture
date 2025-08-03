@@ -20,6 +20,7 @@ duckdbfs::duckdb_secrets(
 
 ui <- page_sidebar(
   title = "Interactive feature selection",
+  # Add custom CSS for smaller font size
 
   includeMarkdown(
     "A demonstration of different mechanisms to interactively select features in mapgl + shiny.
@@ -30,8 +31,8 @@ ui <- page_sidebar(
   ),
 
   sidebar = sidebar(
-    actionButton("get_features", "Get drawn features"),
-    actionButton("load_data", "load data"),
+    actionButton("get_features", "Get drawing"),
+    actionButton("visible_features", "Get current features"),
 
     card(
       card_header("Layers"),
@@ -39,7 +40,20 @@ ui <- page_sidebar(
       input_switch("show_counties", "Counties", value = FALSE),
     ),
     textInput("feature", "Location", "United States"),
-
+    tags$div(
+      style = "font-size: 0.7em;",
+      checkboxGroupInput(
+        "location_type",
+        NULL,
+        c(
+          "Country" = "country",
+          "Region" = "region",
+          "County" = "county",
+          "Locality" = "locality"
+        ),
+        selected = c("country", "region")
+      )
+    ),
     hr(),
 
     br(),
@@ -128,12 +142,14 @@ server <- function(input, output, session) {
 
   # Ex: Select the feature the user clicked on and zoom into it
   # This reacts to drawing features too
-  # observeEvent(input$map_feature_click, {
-  #   x <- input$map_feature_click
-
-  # print(x)
-  # use x$layer and x$properties$FIPS ( ID column) to extract geom and plot
-  # })
+  observeEvent(input$map_feature_click, {
+    my_layers <- c("states_layer", "county_layer")
+    x <- input$map_feature_click
+    if (x$layer %in% my_layers) {
+      print(x)
+    }
+    # use x$layer and x$properties$FIPS ( ID column) to extract geom and plot
+  })
 
   # Ex: Get a Overture by name from Overture
   observeEvent(input$feature, {
@@ -158,31 +174,33 @@ server <- function(input, output, session) {
     print(drawn_features)
   })
 
-  # Ex: Get POINT data from geocoder? (can react by operating on hex?)
+  # Ex: Get POINT data from geocoder?
+  # can react by operating on hex or parent polygon
 
-  # Attempt to pull state/county from geocoder search
-  init <- reactiveValues(loaded = FALSE)
-  observe(
-    if (init$loaded) {
-      result <- input$map_geocoder$result
-      if (!is.null(result)) {
-        temp <- tempfile(fileext = ".geojson")
-        output <- list(
-          type = "FeatureCollection",
-          features = input$map_geocoder$result$features
-        )
-        jsonlite::write_json(
-          output,
-          temp,
-          auto_unbox = TRUE
-        )
-        geo <- sf::st_read(temp)
-        print(geo)
-      }
-    } else {
-      init$loaded <- TRUE
-    }
-  )
+  observeEvent(input$map_geocoder$result, {
+    temp <- tempfile(fileext = ".geojson")
+    output <- list(
+      type = "FeatureCollection",
+      features = input$map_geocoder$result$features
+    )
+    jsonlite::write_json(
+      output,
+      temp,
+      auto_unbox = TRUE
+    )
+    geo <- sf::st_read(temp)
+    print(geo)
+  })
+
+  # Get current features from a specified layer # GDF layer only (not proxy URL / PMTiles layers)
+  observeEvent(input$visible_features, {
+    print("Extracting current features...")
+    proxy <- maplibre_proxy("map")
+    # layer_id be multiple layers or all layers
+    query_rendered_features(proxy)
+    features <- get_queried_features(proxy)
+    print(head(features))
+  })
 
   # Ex: Update the fill color
   observeEvent(input$color, {
