@@ -7,7 +7,7 @@ library(duckdbfs)
 library(colourpicker)
 library(overture)
 
-pmtiles <- "https://minio.carlboettiger.info/public-social-vulnerability/2022/SVI2022_US_county.pmtiles"
+counties <- "https://minio.carlboettiger.info/public-social-vulnerability/2022/SVI2022_US_county.pmtiles"
 tract <- "https://minio.carlboettiger.info/public-social-vulnerability/2022/SVI2022_US_tract.pmtiles"
 
 ## Make anonymous AWS S3 default endpoint for "overturemaps-us-west-2"
@@ -24,9 +24,6 @@ ui <- page_sidebar(
   # Add custom CSS for smaller font size
 
   sidebar = sidebar(
-    actionButton("get_features", "Get drawing"),
-    actionButton("visible_features", "Get current features"),
-
     card(
       card_header("Layers"),
       input_switch("show_states", "States", value = FALSE),
@@ -34,11 +31,17 @@ ui <- page_sidebar(
     ),
 
     card(
-      textInput("feature", "Location", "United States"),
-      actionButton("overture_layer", "go"),
+      textInput("feature", "Find:", NULL),
+      #actionButton("overture_layer", "go"),
     ),
-    hr(),
 
+    hr(),
+    p("Actions"),
+    actionButton("get_features", "Get drawing"),
+    actionButton("visible_features", "Get current features"),
+    actionButton("current_bbox", "Get bbox"),
+
+    hr(),
     br(),
 
     colourInput("color", "Select a color", value = "blue"),
@@ -64,25 +67,27 @@ ui <- page_sidebar(
   - extract points from the built-in geocode
   - query Overture Maps for a polygon
   - Select a feature with mouse from PMTiles or sf layer
-  - Grab current viewport features ('local' sources only?)
+  - Grab visible features (including filters) ('local' sources only?)
   "
   ),
 )
 
 
 server <- function(input, output, session) {
-  # gdf <- get_division("United States")
-
   output$map <- renderMaplibre({
-    m <- mapgl::maplibre(maxZoom = input$max_zoom)
+    m <- mapgl::maplibre(zoom = 1, maxZoom = input$max_zoom)
 
     # PMTiles sources MUST be added at the start
-    # Good to add all source layers at start
+    # Good to add all sources at start, then toggle with layer controls
     m <- m |>
-      add_pmtiles_source(id = "county_source", url = pmtiles) |>
+      add_pmtiles_source(id = "county_source", url = counties) |>
       add_source("states_source", spData::us_states)
 
-    m <- m |> add_geocoder_control() |> add_draw_control()
+    m <- m |>
+      add_geocoder_control() |>
+      add_draw_control() |>
+      add_fullscreen_control() |>
+      add_globe_control()
 
     # Add any layer you want to be on by default
 
@@ -91,7 +96,7 @@ server <- function(input, output, session) {
 
   # Guess layer name of PMTiles file so we don't have to manually enter
   suppressWarnings({
-    layer_name <- sf::st_layers(paste0("/vsicurl/", pmtiles))$name[1]
+    layer_name <- sf::st_layers(paste0("/vsicurl/", counties))$name[1]
   })
 
   observeEvent(input$show_counties, {
@@ -148,13 +153,8 @@ server <- function(input, output, session) {
 
   # Ex: Get a feature by name from Overture
   # really we might want to filter to country, specify type, and fuzzy-match on names
-  observeEvent(input$overture_layer, {
-    print(paste(
-      "Searching Overture for area:",
-      input$feature,
-      ", type:",
-      input$location_type
-    ))
+  observeEvent(input$feature, {
+    print(paste("Searching Overture for area:", input$feature))
 
     #
     new_gdf <- overture::get_division(input$feature)
@@ -179,7 +179,8 @@ server <- function(input, output, session) {
         fit_bounds(bounds, animate = TRUE)
     }
   }) |>
-    debounce(millis = 600) # more time to type?
+    debounce(millis = 3000)
+  # more time to type?
 
   # Ex Show a feature user has drawn on the map
   observeEvent(input$get_features, {
@@ -187,6 +188,12 @@ server <- function(input, output, session) {
 
     drawn_features <- get_drawn_features(maplibre_proxy("map"))
     print(drawn_features)
+  })
+
+  observeEvent(input$current_bbox, {
+    bbox <- sf::st_bbox(unlist(input$map_bbox), crs = 4326)
+    print("current bbox:")
+    print(bbox)
   })
 
   # Ex: Get POINT data from geocoder (OSM)

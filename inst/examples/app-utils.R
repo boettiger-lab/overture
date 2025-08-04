@@ -20,7 +20,10 @@ tract_tiles <- f(
     "SVI2022_US_tract.pmtiles"
 )
 
+# Go nuts with overture buildings, places, addresses?
 
+## Really we should have 
+## select-box for Overture (sub)type.  Should support all types instead?
   tags$div(
         style = "font-size: 0.7em;",
         checkboxGroupInput(
